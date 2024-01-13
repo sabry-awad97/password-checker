@@ -4,10 +4,12 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "start": "bun run ."
+    "start": "cross-env bun run ."
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@total-typescript/ts-reset": "^0.5.1",
+    "@types/bun": "latest",
+    "cross-env": "^7.0.3"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
