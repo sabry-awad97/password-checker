@@ -16,4 +16,26 @@ describe("PasswordChecker", () => {
       expect(hashedPassword).toBe(expectedHash);
     });
   });
+
+  describe("checkPassword", () => {
+    it('should return "Compromised" status for a known compromised password', async () => {
+      // Replace this with a known compromised password
+      const compromisedPassword = "password123";
+
+      const result = await PasswordChecker.checkPassword(compromisedPassword);
+
+      expect(result.password).toBe(compromisedPassword);
+      expect(result.status).toBe("Compromised");
+    });
+
+    it('should return "Safe" status for a known safe password', async () => {
+      // Replace this with a known safe password
+      const safePassword = "5ecureP@ssw0rd";
+
+      const result = await PasswordChecker.checkPassword(safePassword);
+
+      expect(result.password).toBe(safePassword);
+      expect(result.status).toBe("Safe");
+    });
+  });
 });
