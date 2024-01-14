@@ -4,13 +4,16 @@
   "module": "src/index.ts",
   "type": "module",
   "scripts": {
-    "start": "cross-env bun run ."
+    "start": "cross-env bun run src/index.ts",
+    "test": "cross-env bun test",
+    "build": "cross-env bun build"
   },
   "devDependencies": {
     "@total-typescript/ts-reset": "^0.5.1",
     "@types/bun": "latest",
     "@types/cli-progress": "^3.11.5",
-    "cross-env": "^7.0.3"
+    "cross-env": "^7.0.3",
+    "nock": "^13.4.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

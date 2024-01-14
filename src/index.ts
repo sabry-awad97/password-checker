@@ -1,4 +1,4 @@
-import { MultiBar, Presets } from "cli-progress";
+import { Bar, MultiBar, Presets } from "cli-progress";
 import { program } from "commander";
 import pLimit from "p-limit";
 
@@ -8,23 +8,38 @@ export interface PasswordCheckResult {
   count: number;
 }
 
-export class PasswordChecker {
-  public static hashPassword(password: string): string {
+const batchItems = <T>(items: T[], batchSize: number): T[][] => {
+  return Array.from(
+    { length: Math.ceil(items.length / batchSize) },
+    (_, index) => items.slice(index * batchSize, (index + 1) * batchSize)
+  );
+};
+
+export class PwnedApi {
+  async fetchData(prefix: string): Promise<string[]> {
+    const requestUrl = `https://api.pwnedpasswords.com/range/${prefix}`;
+    const response = await fetch(requestUrl);
+    const data = await response.text();
+    return data.split("\r\n");
+  }
+}
+
+export class Sha1Hasher {
+  hash(password: string): string {
     const hash = new Bun.CryptoHasher("sha1");
     hash.update(password);
     return hash.digest("hex").toUpperCase();
   }
+}
 
-  public static async checkPassword(
-    password: string
-  ): Promise<PasswordCheckResult> {
-    const passwordHash = this.hashPassword(password);
+export class PasswordChecker {
+  constructor(private hasher: Sha1Hasher, private passwordApi: PwnedApi) {}
+
+  public async checkPassword(password: string): Promise<PasswordCheckResult> {
+    const passwordHash = this.hasher.hash(password);
     const prefix = passwordHash.slice(0, 5);
     const suffix = passwordHash.slice(5);
-    const requestUrl = `https://api.pwnedpasswords.com/range/${prefix}`;
-    const response = await fetch(requestUrl);
-    const data = await response.text();
-    const dataLines = data.split("\r\n");
+    const dataLines = await this.passwordApi.fetchData(prefix);
 
     let compromisedCount = 0;
     for (const line of dataLines) {
@@ -40,9 +55,7 @@ export class PasswordChecker {
     };
   }
 
-  static async checkPasswords(
-    passwords: string[]
-  ): Promise<PasswordCheckResult[]> {
+  async checkPasswords(passwords: string[]): Promise<PasswordCheckResult[]> {
     const multiBar = new MultiBar(
       {
         format:
@@ -56,10 +69,7 @@ export class PasswordChecker {
 
     const batchSize = 5;
 
-    const batchedPasswords: string[][] = [];
-    for (let i = 0; i < passwords.length; i += batchSize) {
-      batchedPasswords.push(passwords.slice(i, i + batchSize));
-    }
+    const batchedPasswords: string[][] = batchItems(passwords, batchSize);
 
     const batchPromises = batchedPasswords.map((batch) => {
       const bar = multiBar.create(batch.length, 0);
@@ -90,14 +100,12 @@ program
 
 program
   .command("check <passwords...>")
-  .option(
-    "-l, --local <file>",
-    "Path to a local compromised password database file"
-  )
-  .option("-s, --strength", "Check password strength")
-  .description("Check the provided passwords")
   .action(async (passwords: string[], options) => {
-    const results = await PasswordChecker.checkPasswords(passwords);
+    const hasher = new Sha1Hasher();
+    const passwordApi = new PwnedApi();
+    const passwordChecker = new PasswordChecker(hasher, passwordApi);
+
+    const results = await passwordChecker.checkPasswords(passwords);
 
     for (const result of results) {
       if (result.status === "Compromised") {
@@ -112,8 +120,10 @@ program
     }
   });
 
-program.parse(Bun.argv);
+if (import.meta.path === Bun.main) {
+  program.parse(Bun.argv);
 
-if (!Bun.argv.slice(2).length) {
-  program.outputHelp();
+  if (!Bun.argv.slice(2).length) {
+    program.outputHelp();
+  }
 }
