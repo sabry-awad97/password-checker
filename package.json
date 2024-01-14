@@ -6,7 +6,7 @@
   "scripts": {
     "start": "cross-env bun run src/index.ts",
     "test": "cross-env bun test",
-    "build": "cross-env bun build"
+    "build": "cross-env bun build src/index.ts --compile --outfile pwned-passwords"
   },
   "devDependencies": {
     "@total-typescript/ts-reset": "^0.5.1",

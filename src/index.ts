@@ -1,4 +1,4 @@
-import { Bar, MultiBar, Presets } from "cli-progress";
+import { MultiBar, Presets } from "cli-progress";
 import { program } from "commander";
 import pLimit from "p-limit";
 
