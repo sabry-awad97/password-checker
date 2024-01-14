@@ -15,8 +15,7 @@ export class PasswordChecker {
   }
 
   public static async checkPassword(
-    password: string,
-    spinner: Ora
+    password: string
   ): Promise<PasswordCheckResult> {
     const passwordHash = this.hashPassword(password);
     const prefix = passwordHash.slice(0, 5);
@@ -33,8 +32,6 @@ export class PasswordChecker {
       }
     }
 
-    spinner.succeed();
-
     return {
       password,
       status: compromisedCount > 0 ? "Compromised" : "Safe",
@@ -46,12 +43,17 @@ export class PasswordChecker {
     passwords: string[]
   ): Promise<PasswordCheckResult[]> {
     const results: PasswordCheckResult[] = [];
-    const spinner = ora("Checking passwords").start();
+    const spinner = ora({
+      text: "Checking passwords",
+      spinner: "circleHalves",
+      color: "magenta",
+    }).start();
 
     for (const password of passwords) {
       spinner.text = `Checking password '${password}'`;
       spinner.start();
-      const result = await this.checkPassword(password, spinner);
+      const result = await this.checkPassword(password);
+      spinner.succeed();
       results.push(result);
     }
 
