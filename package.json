@@ -1,5 +1,5 @@
 {
-  "name": "bun-pwned-passwords",
+  "name": "password-checker",
   "description": "Bun + TypeScript starter",
   "module": "src/index.ts",
   "type": "module",
