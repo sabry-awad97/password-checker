@@ -32,7 +32,9 @@ describe("PasswordChecker", () => {
       // Replace this with a known safe password
       const safePassword = "5ecureP@ssw0rd";
 
-      const result = await PasswordChecker.checkPassword(safePassword);
+      const result: PasswordCheckResult = await PasswordChecker.checkPassword(
+        safePassword
+      );
 
       expect(result.password).toBe(safePassword);
       expect(result.status).toBe("Safe");
