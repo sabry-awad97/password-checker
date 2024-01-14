@@ -1,5 +1,6 @@
+import { MultiBar, Presets } from "cli-progress";
 import { program } from "commander";
-import ora, { type Ora } from "ora";
+import pLimit from "p-limit";
 
 export interface PasswordCheckResult {
   password: string;
@@ -43,19 +44,31 @@ export class PasswordChecker {
     passwords: string[]
   ): Promise<PasswordCheckResult[]> {
     const results: PasswordCheckResult[] = [];
-    const spinner = ora({
-      text: "Checking passwords",
-      spinner: "circleHalves",
-      color: "magenta",
-    }).start();
 
-    for (const password of passwords) {
-      spinner.text = `Checking password '${password}'`;
-      spinner.start();
-      const result = await this.checkPassword(password);
-      spinner.succeed();
-      results.push(result);
-    }
+    const multiBar = new MultiBar(
+      {
+        format:
+          "{bar} | {percentage}% | ETA: {eta}s | {value}/{total} passwords",
+        hideCursor: true,
+      },
+      Presets.shades_classic
+    );
+
+    const limit = pLimit(5);
+
+    const bars = passwords.map((p) => multiBar.create(1, 0));
+
+    const promises = passwords.map((p, index) =>
+      limit(async () => {
+        const bar = bars[index];
+        const result = await this.checkPassword(p);
+        bar.increment();
+        return result;
+      })
+    );
+
+    results.push(...(await Promise.all(promises)));
+    multiBar.stop();
 
     return results;
   }
