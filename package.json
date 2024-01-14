@@ -1,5 +1,5 @@
 {
-  "name": "bun-ts",
+  "name": "bun-pwned-passwords",
   "description": "Bun + TypeScript starter",
   "module": "src/index.ts",
   "type": "module",
@@ -13,5 +13,8 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "commander": "^11.1.0"
   }
 }
