@@ -1,4 +1,5 @@
 import { program } from "commander";
+import ora, { type Ora } from "ora";
 
 export interface PasswordCheckResult {
   password: string;
@@ -14,7 +15,8 @@ export class PasswordChecker {
   }
 
   public static async checkPassword(
-    password: string
+    password: string,
+    spinner: Ora
   ): Promise<PasswordCheckResult> {
     const passwordHash = this.hashPassword(password);
     const prefix = passwordHash.slice(0, 5);
@@ -31,6 +33,8 @@ export class PasswordChecker {
       }
     }
 
+    spinner.succeed();
+
     return {
       password,
       status: compromisedCount > 0 ? "Compromised" : "Safe",
@@ -41,9 +45,16 @@ export class PasswordChecker {
   static async checkPasswords(
     passwords: string[]
   ): Promise<PasswordCheckResult[]> {
-    const results = await Promise.all(
-      passwords.map((p) => this.checkPassword(p))
-    );
+    const results: PasswordCheckResult[] = [];
+    const spinner = ora("Checking passwords").start();
+
+    for (const password of passwords) {
+      spinner.text = `Checking password '${password}'`;
+      spinner.start();
+      const result = await this.checkPassword(password, spinner);
+      results.push(result);
+    }
+
     return results;
   }
 }
