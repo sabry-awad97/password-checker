@@ -43,8 +43,6 @@ export class PasswordChecker {
   static async checkPasswords(
     passwords: string[]
   ): Promise<PasswordCheckResult[]> {
-    const results: PasswordCheckResult[] = [];
-
     const multiBar = new MultiBar(
       {
         format:
@@ -56,20 +54,30 @@ export class PasswordChecker {
 
     const limit = pLimit(5);
 
-    const bars = passwords.map((p) => multiBar.create(1, 0));
+    const batchSize = 5;
 
-    const promises = passwords.map((p, index) =>
-      limit(async () => {
-        const bar = bars[index];
-        const result = await this.checkPassword(p);
-        bar.increment();
-        return result;
-      })
-    );
+    const batchedPasswords: string[][] = [];
+    for (let i = 0; i < passwords.length; i += batchSize) {
+      batchedPasswords.push(passwords.slice(i, i + batchSize));
+    }
 
-    results.push(...(await Promise.all(promises)));
+    const batchPromises = batchedPasswords.map((batch) => {
+      const bar = multiBar.create(batch.length, 0);
+      const promises = batch.map((password) =>
+        limit(async () => {
+          const result = await this.checkPassword(password);
+          bar.increment();
+          return result;
+        })
+      );
+      return Promise.all(promises);
+    });
+
+    const batchResults = await Promise.all(batchPromises);
+
     multiBar.stop();
 
+    const results: PasswordCheckResult[] = batchResults.flat();
     return results;
   }
 }
